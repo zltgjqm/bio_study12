@@ -222,6 +222,6 @@ grant execute on function public.current_role() to authenticated;
 -- ============================
 -- 1) 웹사이트에서 본인 이메일로 회원가입/로그인해서 profiles row를 만든다.
 -- 2) Supabase SQL Editor에서 아래 한 줄의 이메일을 본인 이메일로 바꿔 실행한다.
--- update public.profiles set role = 'owner' where email = 'YOUR_EMAIL@example.com';
+-- update public.profiles set role = 'owner' where email = 'sihyeon0422@yonsei.ac.kr';
 --
 -- 이후 owner는 Library > User Access에서 member/viewer/blocked를 바꿀 수 있다.
