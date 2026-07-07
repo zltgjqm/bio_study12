@@ -5,6 +5,126 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Biology Second Brain</title>
 <link rel="stylesheet" href="assets/style.css" />
+
+<style>
+/* Readability upgrade: bigger content hierarchy + preview boxes */
+.section-label {
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.cat-card h3,
+.mini-panel h3 {
+  font-size: 1.18rem;
+  font-weight: 850;
+}
+
+.cat-card p,
+.mini-panel p {
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.paper-card {
+  align-items: stretch;
+  gap: 18px;
+}
+
+.paper-title {
+  font-size: 1.12rem;
+  line-height: 1.35;
+  font-weight: 850;
+  margin-bottom: 8px;
+}
+
+.paper-meta {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.paper-open {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.paper-preview {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.info-box {
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+}
+
+.info-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+  margin-bottom: 5px;
+}
+
+.info-content {
+  display: block;
+  font-size: 1.03rem;
+  line-height: 1.62;
+  font-weight: 650;
+  color: var(--text-strong, #172033);
+}
+
+.info-box.summary-box .info-content {
+  font-size: 1.08rem;
+  font-weight: 720;
+}
+
+.info-box.pathway-box {
+  background: rgba(239, 246, 255, 0.72);
+}
+
+.info-box.pathway-box .info-content {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.tag-row {
+  margin-top: 10px;
+}
+
+.tag {
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.cycle-group > summary {
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+@media (max-width: 720px) {
+  .paper-card {
+    flex-direction: column;
+  }
+
+  .paper-title {
+    font-size: 1.03rem;
+  }
+
+  .info-content,
+  .info-box.summary-box .info-content {
+    font-size: 0.98rem;
+  }
+}
+</style>
+
 </head>
 <body>
 <header class="topbar">
@@ -110,11 +230,28 @@
 
   function cycleTag(cycle) { return cycle ? `<span class="cycle-badge">${wiki.escapeHtml(cycle)}</span>` : ""; }
   function badge(label, value, cls) { return value ? `<span class="${cls} ${wiki.escapeHtml(value)}">${wiki.escapeHtml(label || value)}</span>` : ""; }
+  function firstText(value) {
+    if (!value) return "";
+    if (Array.isArray(value)) return value.filter(Boolean).join(" ");
+    return String(value);
+  }
+  function previewBox(label, value, cls) {
+    const text = firstText(value);
+    if (!text.trim()) return "";
+    const shortText = text.length > 260 ? `${text.slice(0, 260)}...` : text;
+    return `<div class="info-box ${cls}"><span class="info-label">${label}</span><span class="info-content">${wiki.escapeHtml(shortText)}</span></div>`;
+  }
+  function paperPreview(p) {
+    const summary = previewBox("Summary", p.summary, "summary-box");
+    const pathway = previewBox("Pathway", p.pathway, "pathway-box");
+    const knowledge = previewBox("New Knowledge", p.newKnowledge, "knowledge-box");
+    return summary || pathway || knowledge ? `<div class="paper-preview">${summary}${pathway}${knowledge}</div>` : "";
+  }
   function paperCardHtml(p) {
-    return `<a class="paper-card" href="${wiki.entityUrl(p)}"><div class="paper-main"><p class="paper-title">${wiki.escapeHtml(p.title)}</p><div class="paper-meta">${cycleTag(p.readCycle)}${badge(p.visibility, p.visibility, "visibility-badge")}${badge(p.reviewStatus, p.reviewStatus, "status-badge")}<span>${wiki.escapeHtml(p.authors || "")}</span><span>·</span><span>${wiki.escapeHtml(p.journal || "")}</span><span>·</span><span>${wiki.escapeHtml(p.year || "")}</span></div><div class="tag-row">${(p.tags || []).map((t) => `<span class="tag">${wiki.escapeHtml(t)}</span>`).join("")}</div></div><span class="paper-open">Open →</span></a>`;
+    return `<a class="paper-card" href="${wiki.entityUrl(p)}"><div class="paper-main"><p class="paper-title">${wiki.escapeHtml(p.title)}</p><div class="paper-meta">${cycleTag(p.readCycle)}${badge(p.visibility, p.visibility, "visibility-badge")}${badge(p.reviewStatus, p.reviewStatus, "status-badge")}<span>${wiki.escapeHtml(p.authors || "")}</span><span>·</span><span>${wiki.escapeHtml(p.journal || "")}</span><span>·</span><span>${wiki.escapeHtml(p.year || "")}</span></div>${paperPreview(p)}<div class="tag-row">${(p.tags || []).map((t) => `<span class="tag">${wiki.escapeHtml(t)}</span>`).join("")}</div></div><span class="paper-open">Open →</span></a>`;
   }
   function knowledgeCardHtml(k) {
-    return `<a class="paper-card" href="${wiki.entityUrl(k)}"><div class="paper-main"><p class="paper-title">${wiki.escapeHtml(k.title)}</p><div class="paper-meta">${cycleTag(k.readCycle)}<span>${wiki.escapeHtml(k.category || "Knowledge")}</span><span>·</span><span>${wiki.escapeHtml(k.originalSource || "개인 메모")}</span></div><div class="tag-row">${(k.tags || []).map((t) => `<span class="tag">${wiki.escapeHtml(t)}</span>`).join("")}</div></div><span class="paper-open">Open →</span></a>`;
+    return `<a class="paper-card" href="${wiki.entityUrl(k)}"><div class="paper-main"><p class="paper-title">${wiki.escapeHtml(k.title)}</p><div class="paper-meta">${cycleTag(k.readCycle)}<span>${wiki.escapeHtml(k.category || "Knowledge")}</span><span>·</span><span>${wiki.escapeHtml(k.originalSource || "개인 메모")}</span></div>${paperPreview(k)}<div class="tag-row">${(k.tags || []).map((t) => `<span class="tag">${wiki.escapeHtml(t)}</span>`).join("")}</div></div><span class="paper-open">Open →</span></a>`;
   }
   function emptyCard(message) { return `<div class="paper-card"><div class="paper-main"><p class="paper-title">${message}</p></div></div>`; }
   function renderCycleGroups(containerId, items, cardFn, emptyMessage, filterCycle) {
