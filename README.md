@@ -1,7 +1,7 @@
 # Biology Second Brain — Supabase Edition
 
 GitHub Pages에서 돌아가는 정적 HTML/CSS/JavaScript Biology Wiki입니다.  
-기존 localStorage 저장 방식 대신 Supabase Auth + Supabase Database + RLS를 사용해서 여러 컴퓨터에서 같은 데이터를 볼 수 있게 만들었습니다.
+저장 방식 : Supabase Auth + Supabase Database + RLS를 사용
 
 ## 권한 구조
 
