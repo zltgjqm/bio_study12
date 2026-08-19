@@ -209,12 +209,57 @@ create trigger knowledge_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- ============================
+-- 4b. entity_notes: Disease/Gene/Cell Type/Tissue에 다는 메모 (공개/개인 선택)
+-- ============================
+create table if not exists public.entity_notes (
+  id text primary key,
+  entity_type text not null check (entity_type in ('disease','gene','cell_type','tissue')),
+  entity_name text not null,
+  author_id uuid not null references public.profiles(id) on delete cascade,
+  content text not null,
+  visibility text not null default 'public' check (visibility in ('public','private')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists entity_notes_lookup on public.entity_notes (entity_type, entity_name);
+alter table public.entity_notes enable row level security;
+
+DROP POLICY IF EXISTS "entity_notes select public or own or owner" ON public.entity_notes;
+DROP POLICY IF EXISTS "entity_notes insert own" ON public.entity_notes;
+DROP POLICY IF EXISTS "entity_notes update own or owner" ON public.entity_notes;
+DROP POLICY IF EXISTS "entity_notes delete own or owner" ON public.entity_notes;
+DROP TRIGGER IF EXISTS entity_notes_set_updated_at ON public.entity_notes;
+
+create policy "entity_notes select public or own or owner" on public.entity_notes
+  for select using (
+    visibility = 'public' or author_id = auth.uid() or public.current_role() = 'owner'
+  );
+
+create policy "entity_notes insert own" on public.entity_notes
+  for insert with check (
+    author_id = auth.uid() and public.current_role() in ('owner','member','viewer')
+  );
+
+create policy "entity_notes update own or owner" on public.entity_notes
+  for update using (author_id = auth.uid() or public.current_role() = 'owner')
+  with check (author_id = auth.uid() or public.current_role() = 'owner');
+
+create policy "entity_notes delete own or owner" on public.entity_notes
+  for delete using (author_id = auth.uid() or public.current_role() = 'owner');
+
+create trigger entity_notes_set_updated_at
+  before update on public.entity_notes
+  for each row execute function public.set_updated_at();
+
+-- ============================
 -- 5. API grants
 -- ============================
 grant usage on schema public to authenticated;
 grant select, update, delete on public.profiles to authenticated;
 grant select, insert, update, delete on public.papers to authenticated;
 grant select, insert, update, delete on public.knowledge to authenticated;
+grant select, insert, update, delete on public.entity_notes to authenticated;
 grant execute on function public.current_role() to authenticated;
 
 -- ============================

@@ -9,7 +9,7 @@
 <body>
 <header class="topbar">
   <div class="brand"><span class="mark"></span><a href="../index.html">Biology Second Brain</a><span class="sub">/ connected view</span></div>
-  <nav class="top-links"><a href="../index.html">Home</a><a href="library.html">Library</a><a href="add.html" data-member-plus>+ Add</a></nav>
+  <nav class="top-links"><a href="../index.html">Home</a><a href="library.html">Library</a><a href="add.html" data-member-plus>+ Add</a><a href="users.html" data-owner-only>Users</a></nav>
 </header>
 <ul class="base-track"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></ul>
 <main class="shell">
@@ -68,10 +68,51 @@ function knowledgeCard(k) {
 function listSection(title, items, renderer) {
   return section(title, items && items.length ? `<div class="paper-list">${items.map(renderer).join("")}</div>` : "");
 }
+async function notesSection(item) {
+  const name = item.displayName || item.title;
+  let notes = [];
+  try { notes = await window.BioDB.fetchNotesFor(item.type, name); }
+  catch (e) { return `<div class="block"><h2>메모</h2><p style="color:var(--text-faint);">메모를 불러오지 못했습니다: ${wiki.escapeHtml(e.message)}</p></div>`; }
+  const list = notes.length
+    ? notes.map((n) => {
+        const mine = AUTH && n.authorId === AUTH.user.id;
+        const canDelete = mine || (AUTH && AUTH.isOwner);
+        const visLabel = n.visibility === "private" ? "나만 보기" : "전체 공개";
+        return `<div class="note-card"><p class="note-content">${wiki.escapeHtml(n.content)}</p><div class="note-meta"><span class="visibility-badge ${wiki.escapeHtml(n.visibility)}">${visLabel}</span><span>${new Date(n.createdAt).toLocaleDateString()}</span>${canDelete ? `<button class="link-button" type="button" onclick="deleteNote('${wiki.escapeHtml(n.id)}')">삭제</button>` : ""}</div></div>`;
+      }).join("")
+    : `<p style="color:var(--text-faint);">아직 메모가 없습니다. 역할, 정리, 개인 생각을 자유롭게 남겨보세요.</p>`;
+  const form = `<form class="note-form" onsubmit="return submitNote(event)">
+    <textarea id="note-input" placeholder="이 항목에 대한 역할, 정리, 개인 메모를 남겨보세요." rows="3"></textarea>
+    <div class="note-form-row">
+      <select id="note-visibility"><option value="public">전체 공개</option><option value="private">나만 보기</option></select>
+      <button class="btn secondary" type="submit">메모 추가</button>
+    </div>
+  </form>`;
+  return `<div class="block"><h2>메모</h2><div class="note-list">${list}</div>${form}</div>`;
+}
+async function submitNote(event) {
+  event.preventDefault();
+  const input = document.getElementById("note-input");
+  const content = input.value.trim();
+  if (!content) return false;
+  const visibility = document.getElementById("note-visibility").value;
+  try {
+    await window.BioDB.addNote({ entityType: ITEM.type, entityName: DISPLAY, content, visibility }, AUTH);
+    location.reload();
+  } catch (e) { alert("메모 저장 실패: " + e.message); }
+  return false;
+}
+async function deleteNote(id) {
+  if (!confirm("메모를 삭제할까요?")) return;
+  try { await window.BioDB.deleteNote(id); location.reload(); }
+  catch (e) { alert("삭제 실패: " + e.message); }
+}
 function relatedPathways(relatedPapers) { return wiki.unique(relatedPapers.flatMap((p) => p.pathway || [])); }
 function pathwaySection(relatedPapers) {
   const lines = relatedPathways(relatedPapers);
-  return section("관련 Pathway", lines.length ? lines.map(pathwayChain).join("") : "");
+  if (!lines.length) return section("관련 Pathway", "");
+  const items = lines.map((line, i) => `<div class="pathway-item"><span class="pathway-index">${i + 1}</span>${pathwayChain(line)}</div>`).join("");
+  return section("관련 Pathway", `<div class="pathway-list">${items}</div>`);
 }
 async function deleteCurrentItem() {
   if (!ITEM) return;
@@ -103,7 +144,7 @@ function managementBox(item) {
   }
   return "";
 }
-function renderEntity(item) {
+async function renderEntity(item) {
   ITEM = item;
   DISPLAY = item.displayName || item.title;
   document.title = `${DISPLAY} · Biology Second Brain`;
@@ -134,7 +175,7 @@ function renderEntity(item) {
     body += chipSection("Related Tissues", "tissue", item.relatedTissues || []);
     side += `<div class="side-box"><h3>Knowledge Info</h3>${item.readCycle ? `<div class="row"><span>Read Cycle</span><span>${wiki.escapeHtml(item.readCycle)}</span></div>` : ""}<div class="row"><span>Category</span><span>${wiki.escapeHtml(item.category || "Note")}</span></div><div class="row"><span>Source</span><span>${wiki.escapeHtml(item.originalSource || "—")}</span></div></div>`;
   } else if (item.type === "disease") {
-    body += section("Overview", `<p>${wiki.escapeHtml(item.description || `${DISPLAY}와 연결된 Paper/Knowledge를 모아 보여줍니다.`)}</p>`);
+    body += await notesSection(item);
     body += chipSection("Major Genes", "gene", related.genes);
     body += chipSection("Cell Types", "cell_type", related.cellTypes);
     body += chipSection("Tissues", "tissue", related.tissues);
@@ -142,7 +183,7 @@ function renderEntity(item) {
     body += listSection("Related Papers", related.papers, paperCard);
     body += listSection("Related Knowledge", related.knowledge, knowledgeCard);
   } else if (item.type === "gene") {
-    body += section("Overview", `<p>${wiki.escapeHtml(item.description || `${DISPLAY}와 연결된 Disease, Cell Type, Tissue, Paper를 모아 보여줍니다.`)}</p>`);
+    body += await notesSection(item);
     body += chipSection("Related Disease", "disease", related.diseases);
     body += chipSection("Related Cell Types", "cell_type", related.cellTypes);
     body += chipSection("Related Tissues", "tissue", related.tissues);
@@ -150,7 +191,7 @@ function renderEntity(item) {
     body += listSection("Related Papers", related.papers, paperCard);
     body += listSection("Related Knowledge", related.knowledge, knowledgeCard);
   } else if (item.type === "cell_type") {
-    body += section("Overview", `<p>${wiki.escapeHtml(item.description || `${DISPLAY}와 연결된 Disease, Gene, Tissue, Paper를 모아 보여줍니다.`)}</p>`);
+    body += await notesSection(item);
     body += chipSection("Related Disease", "disease", related.diseases);
     body += chipSection("Related Genes", "gene", related.genes);
     body += chipSection("Related Tissues", "tissue", related.tissues);
@@ -158,7 +199,7 @@ function renderEntity(item) {
     body += listSection("Related Papers", related.papers, paperCard);
     body += listSection("Related Knowledge", related.knowledge, knowledgeCard);
   } else if (item.type === "tissue") {
-    body += section("Overview", `<p>${wiki.escapeHtml(item.description || `${DISPLAY}와 연결된 Disease, Gene, Cell Type, Paper를 모아 보여줍니다.`)}</p>`);
+    body += await notesSection(item);
     body += chipSection("Related Disease", "disease", related.diseases);
     body += chipSection("Related Genes", "gene", related.genes);
     body += chipSection("Cell Types", "cell_type", related.cellTypes);
@@ -193,7 +234,7 @@ function renderEntity(item) {
       root.innerHTML = `<div class="side-box"><h3>찾을 수 없습니다</h3><p class="detail-sub">요청한 항목을 찾지 못했어요. 홈에서 다시 검색해보세요.</p></div>`;
       return;
     }
-    renderEntity(item);
+    await renderEntity(item);
   } catch (e) {
     root.innerHTML = `<div class="error-card">Supabase 데이터를 불러오지 못했습니다: ${wiki.escapeHtml(e.message)}</div>`;
   }

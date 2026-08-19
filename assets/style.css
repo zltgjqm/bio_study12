@@ -123,6 +123,10 @@ a { color: inherit; text-decoration: none; }
 
 .cycle-badge { font-family: var(--font-mono); font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: #fff7e6; border: 1px solid #f0d9a6; color: #8a6414; font-weight: 500; }
 
+.pathway-list { display: grid; gap: 10px; }
+.pathway-item { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border-soft); border-radius: 14px; padding: 12px 14px; }
+.pathway-index { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 999px; background: var(--accent-gene, var(--accent-cell, #2563eb)); color: #fff; font-family: var(--font-mono); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.pathway-item .pathway-chain { margin-bottom: 0; }
 .pathway-chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
 .pathway-step { font-family: var(--font-mono); font-size: 13px; padding: 7px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); color: var(--text); }
 .pathway-arrow { color: var(--text-faint); font-size: 14px; }
@@ -360,6 +364,14 @@ footer { border-top: 1px solid var(--border-soft); color: var(--text-faint); fon
 .inline-select { width: auto; min-width: 118px; padding: 7px 9px; border-radius: 10px; font-size: 12.5px; }
 .admin-panel { border: 1px solid var(--border-soft); border-radius: 20px; padding: 18px; background: #fff; margin: 16px 0; }
 .admin-panel h3 { margin: 0 0 12px; font-family: var(--font-display); }
+
+.note-list { display: grid; gap: 10px; margin-bottom: 14px; }
+.note-card { border: 1px solid var(--border-soft); border-radius: 14px; padding: 12px 14px; background: var(--surface); }
+.note-content { margin: 0 0 8px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.note-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-faint); }
+.note-form { border: 1px dashed var(--border-soft); border-radius: 14px; padding: 12px; }
+.note-form textarea { width: 100%; resize: vertical; border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px; font: inherit; box-sizing: border-box; }
+.note-form-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
 .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .admin-table th, .admin-table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
 .admin-table th { color: var(--text-faint); font-family: var(--font-mono); font-size: 11.5px; text-transform: uppercase; }

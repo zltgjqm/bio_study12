@@ -197,6 +197,50 @@
     return data;
   }
 
+  function rowToNote(row) {
+    return {
+      id: row.id,
+      entityType: row.entity_type,
+      entityName: row.entity_name,
+      authorId: row.author_id,
+      content: row.content,
+      visibility: row.visibility || "public",
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async function fetchNotesFor(entityType, entityName) {
+    const { data, error } = await client()
+      .from("entity_notes")
+      .select("*")
+      .eq("entity_type", entityType)
+      .eq("entity_name", entityName)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map(rowToNote);
+  }
+
+  async function addNote({ entityType, entityName, content, visibility }, auth) {
+    const row = {
+      id: newId("note"),
+      entity_type: entityType,
+      entity_name: entityName,
+      author_id: auth.user.id,
+      content: String(content || "").trim(),
+      visibility: visibility === "private" ? "private" : "public",
+    };
+    const { data, error } = await client().from("entity_notes").insert(row).select().single();
+    if (error) throw error;
+    return rowToNote(data);
+  }
+
+  async function deleteNote(id) {
+    const { error } = await client().from("entity_notes").delete().eq("id", id);
+    if (error) throw error;
+    return true;
+  }
+
   function buildGraph(remoteData, includeLocal = false) {
     return wiki().buildKnowledgeGraph(window.WIKI_DATA || {}, { remoteData, includeLocal });
   }
@@ -213,6 +257,9 @@
     setPaperFields,
     fetchProfiles,
     updateProfileRole,
+    fetchNotesFor,
+    addNote,
+    deleteNote,
     buildGraph,
   };
 })();
